@@ -45,3 +45,4 @@ button.on{background:#ccfbf1;border-color:#0f766e}
 #busy[hidden],#toast[hidden]{display:none}
 .spin{width:38px;height:38px;border:4px solid #fff4;border-top-color:#fff;border-radius:50%;animation:s 1s linear infinite}
 @keyframes s{to{transform:rotate(360deg)}}
+[hidden]{display:none!important}
