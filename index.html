@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>ماسح المستندات</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="bar"><button id="back" class="ic" hidden>›</button><h1 id="title">ماسح المستندات</h1><span id="barActions"></span></header>
+
+<main id="home" class="view">
+  <input id="search" type="search" placeholder="بحث في المستندات...">
+  <div id="docs"></div>
+  <p id="empty" class="muted" hidden>لا توجد مستندات بعد. اضغط على الكاميرا للبدء.</p>
+  <div class="fab">
+    <label class="fabBtn small">🖼️<input id="importInput" type="file" accept="image/*" multiple hidden></label>
+    <button id="newScan" class="fabBtn">📷</button>
+  </div>
+  <button id="installBtn" class="install" hidden>⬇️ تثبيت التطبيق</button>
+</main>
+
+<main id="camera" class="view" hidden>
+  <video id="video" playsinline muted autoplay></video>
+  <div class="camTop"><button id="camClose" class="ic">✕</button><span id="camCount"></span><button id="torch" class="ic" hidden>🔦</button></div>
+  <div class="camBottom">
+    <label class="ic big">🖼️<input id="camImport" type="file" accept="image/*" multiple hidden></label>
+    <button id="shutter"></button>
+    <button id="camDone" class="done">تم</button>
+  </div>
+</main>
+
+<main id="editor" class="view" hidden>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <div id="cropBtns" class="row">
+    <button id="autoCrop">قص تلقائي</button><button id="fullCrop">الصورة كاملة</button><button id="applyCrop" class="primary">متابعة ›</button>
+  </div>
+  <div id="filterPane" hidden>
+    <div class="row chips" id="filters">
+      <button data-f="original">الأصلي</button><button data-f="magic" class="on">ألوان ذكية</button><button data-f="bw">أبيض وأسود</button><button data-f="gray">رمادي</button>
+    </div>
+    <div class="sliders"><label>السطوع <input id="bright" type="range" min="-60" max="60" value="0"></label>
+    <label>التباين <input id="contrast" type="range" min="-40" max="60" value="0"></label></div>
+    <div class="row"><button id="rotL">↶ تدوير</button><button id="rotR">↷ تدوير</button><button id="recrop">✂️ قص</button><button id="savePage" class="primary">حفظ ✓</button></div>
+  </div>
+</main>
+
+<main id="doc" class="view" hidden>
+  <div class="row docTools">
+    <button id="exportPdf" class="primary">PDF 📄</button>
+    <button id="shareImgs">مشاركة صور</button>
+    <button id="ocrBtn">استخراج النص (OCR)</button>
+  </div>
+  <div class="row docTools">
+    <button id="addPage">＋ صفحة</button><button id="addImport">＋ من المعرض</button><button id="renameDoc">✎ اسم</button><button id="delDoc" class="danger">حذف</button>
+  </div>
+  <div id="pages"></div>
+  <div id="ocrBox" hidden><textarea id="ocrText" dir="auto"></textarea><div class="row"><button id="copyOcr">نسخ</button><button id="shareOcr">مشاركة النص</button></div></div>
+  <input id="docImport" type="file" accept="image/*" multiple hidden>
+</main>
+
+<div id="toast" hidden></div>
+<div id="busy" hidden><div class="spin"></div><span id="busyText"></span></div>
+<script src="app.js"></script>
+</body>
+</html>
