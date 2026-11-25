@@ -93,7 +93,7 @@ function startLive(){
   const dist=(a,b)=>Math.max(...a.map((p,i)=>Math.hypot(p[0]-b[i][0],p[1]-b[i][1])));
   const loop=ts=>{
     live.raf=requestAnimationFrame(loop);if(ts-live.t<140||!v.videoWidth)return;live.t=ts;
-    const w=176,h=Math.round(w*v.videoHeight/v.videoWidth);t.width=w;t.height=h;tx.drawImage(v,0,0,w,h);
+    const w=144,h=Math.round(w*v.videoHeight/v.videoWidth);t.width=w;t.height=h;tx.drawImage(v,0,0,w,h);
     let q=null;try{q=DocDetect.find(tx.getImageData(0,0,w,h).data,w,h,.16)}catch(e){}
     if(q){live.miss=0;
       if(live.q&&dist(q,live.q)<.12)live.q=live.q.map((p,i)=>[p[0]*.45+q[i][0]*.55,p[1]*.45+q[i][1]*.55]);else live.q=q}
@@ -213,7 +213,7 @@ $('#recrop').onclick=()=>enterCrop();
 
 // order: TL TR BR BL
 function detectCorners(c){
-  try{const w=220,h=Math.round(w*c.height/c.width);const t=document.createElement('canvas');t.width=w;t.height=h;const x=t.getContext('2d');x.drawImage(c,0,0,w,h);
+  try{const w=240,h=Math.round(w*c.height/c.width);const t=document.createElement('canvas');t.width=w;t.height=h;const x=t.getContext('2d');x.drawImage(c,0,0,w,h);
     const q=DocDetect.find(x.getImageData(0,0,w,h).data,w,h,.12);if(q)return q}catch(e){}
   return detectCornersOld(c);
 }
