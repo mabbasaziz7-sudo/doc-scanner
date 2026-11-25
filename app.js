@@ -82,25 +82,62 @@ $('#search').oninput=renderDocs;
 $('#search2').oninput=renderDocs;
 
 // ---------- camera ----------
+
+// ---------- live document detection ----------
+const live={raf:0,t:0,q:null,miss:0,hist:[],still:0,lastAuto:0,auto:localStorage.getItem('autoCap')==='1'};
+function setAutoBtn(){const b=$('#autoBtn');b.classList.toggle('on',live.auto);b.textContent='تصوير تلقائي: '+(live.auto?'تشغيل':'إيقاف')}
+$('#autoBtn').onclick=()=>{live.auto=!live.auto;localStorage.setItem('autoCap',live.auto?'1':'0');live.still=0;setAutoBtn()};
+function stopLive(){cancelAnimationFrame(live.raf);live.raf=0;live.q=null;live.hist=[];const o=$('#liveOv');o.getContext('2d').clearRect(0,0,o.width,o.height)}
+function startLive(){
+  stopLive();setAutoBtn();const ov=$('#liveOv'),v=$('#video'),t=document.createElement('canvas'),tx=t.getContext('2d',{willReadFrequently:true});
+  const dist=(a,b)=>Math.max(...a.map((p,i)=>Math.hypot(p[0]-b[i][0],p[1]-b[i][1])));
+  const loop=ts=>{
+    live.raf=requestAnimationFrame(loop);if(ts-live.t<140||!v.videoWidth)return;live.t=ts;
+    const w=176,h=Math.round(w*v.videoHeight/v.videoWidth);t.width=w;t.height=h;tx.drawImage(v,0,0,w,h);
+    let q=null;try{q=DocDetect.find(tx.getImageData(0,0,w,h).data,w,h,.16)}catch(e){}
+    if(q){live.miss=0;
+      if(live.q&&dist(q,live.q)<.12)live.q=live.q.map((p,i)=>[p[0]*.45+q[i][0]*.55,p[1]*.45+q[i][1]*.55]);else live.q=q}
+    else if(++live.miss>=3)live.q=null;
+    // geometry (object-fit: cover)
+    const dpr=devicePixelRatio||1,cw=ov.clientWidth,ch=ov.clientHeight;if(ov.width!==Math.round(cw*dpr)){ov.width=Math.round(cw*dpr);ov.height=Math.round(ch*dpr)}
+    const x=ov.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,cw,ch);
+    const sc=Math.max(cw/v.videoWidth,ch/v.videoHeight),ox=(cw-v.videoWidth*sc)/2,oy=(ch-v.videoHeight*sc)/2;
+    const hint=$('#hintTxt');
+    if(live.q){
+      const p=live.q.map(c=>[ox+c[0]*v.videoWidth*sc,oy+c[1]*v.videoHeight*sc]);
+      x.beginPath();p.forEach((c,i)=>i?x.lineTo(...c):x.moveTo(...c));x.closePath();
+      x.fillStyle='rgba(20,184,166,.18)';x.fill();x.strokeStyle='#2dd4bf';x.lineWidth=3;x.lineJoin='round';x.stroke();
+      p.forEach(c=>{x.beginPath();x.arc(c[0],c[1],7,0,7);x.fillStyle='#fff';x.fill();x.strokeStyle='#14b8a6';x.lineWidth=3;x.stroke()});
+      hint.textContent=live.auto&&state.camMode==='scan'?'ثبّت الهاتف… سيتم التصوير تلقائياً':'تم اكتشاف المستند — اضغط للتصوير';hint.className='ok';
+      live.hist.push({ts,q:live.q});while(live.hist.length&&ts-live.hist[0].ts>900)live.hist.shift();
+      const moved=live.hist.length>3?dist(live.q,live.hist[0].q):1;
+      if(live.hist.length>5&&moved<.02&&ts-live.hist[0].ts>700)live.still+=1;else live.still=0;
+      if(live.auto&&state.camMode==='scan'&&live.still>=4&&ts-live.lastAuto>2500){live.lastAuto=ts;live.still=0;live.hist=[];$('#shutter').click()}
+    }else{hint.textContent='وجّه الكاميرا نحو المستند';hint.className='';live.hist=[];live.still=0}
+  };
+  live.raf=requestAnimationFrame(loop);
+}
 async function openCamera(mode){
   state.camMode=mode||'scan';show('camera');
   const scan=state.camMode==='scan';
   $('#camDone').hidden=!scan;$('#camImport').closest('label').hidden=!scan;
   try{
     state.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:2560},height:{ideal:1440}},audio:false});
-    const v=$('#video');v.srcObject=state.stream;await v.play();
+    const v=$('#video');v.srcObject=state.stream;await v.play();startLive();
     const tr=state.stream.getVideoTracks()[0];const caps=tr.getCapabilities?tr.getCapabilities():{};
     $('#torch').hidden=!caps.torch;state.torch=false;
   }catch(e){toast('تعذر فتح الكاميرا. تأكد من السماح بالكاميرا.');}
   updCam();
 }
-function closeCamera(){if(state.stream){state.stream.getTracks().forEach(t=>t.stop());state.stream=null}}
+function closeCamera(){stopLive();if(state.stream){state.stream.getTracks().forEach(t=>t.stop());state.stream=null}}
 function updCam(){$('#camCount').textContent=state.camMode==='scan'&&state.captured.length?state.captured.length+' صفحة':''}
 $('#torch').onclick=async()=>{try{state.torch=!state.torch;await state.stream.getVideoTracks()[0].applyConstraints({advanced:[{torch:state.torch}]})}catch(e){}};
 $('#shutter').onclick=async()=>{
   const v=$('#video');if(!v.videoWidth)return toast('الكاميرا غير جاهزة');
   const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);
   const blob=await blobOf(c,.95);
+  try{blob.__corners=detectCorners(c)}catch(e){}
+  const fl=document.createElement('div');fl.style.cssText='position:absolute;inset:0;background:#fff;opacity:.7;z-index:5;pointer-events:none;transition:opacity .25s';$('#camera').append(fl);requestAnimationFrame(()=>fl.style.opacity=0);setTimeout(()=>fl.remove(),300);
   if(state.camMode==='idcard'){
     state.idcard[state.idSlot]=blob;closeCamera();renderIdcard();show('idcard');
     if(navigator.vibrate)navigator.vibrate(30);return}
@@ -135,7 +172,7 @@ async function nextPending(){
   try{
     const img=await loadImg(b);const c=fitCanvas(img,2400);
     state.img=c;state.origBlob=await blobOf(c,.9);
-    state.corners=detectCorners(c);state.filter='magic';state.bright=0;state.contrast=0;state.rot=0;state.mode='new';state.editIdx=-1;
+    state.corners=(b.__corners&&b.__corners.length===4)?b.__corners:detectCorners(c);state.filter='magic';state.bright=0;state.contrast=0;state.rot=0;state.mode='new';state.editIdx=-1;
     enterCrop();
   }catch(e){toast('تعذر قراءة الصورة');nextPending()}
   busy('');
@@ -176,6 +213,11 @@ $('#recrop').onclick=()=>enterCrop();
 
 // order: TL TR BR BL
 function detectCorners(c){
+  try{const w=220,h=Math.round(w*c.height/c.width);const t=document.createElement('canvas');t.width=w;t.height=h;const x=t.getContext('2d');x.drawImage(c,0,0,w,h);
+    const q=DocDetect.find(x.getImageData(0,0,w,h).data,w,h,.12);if(q)return q}catch(e){}
+  return detectCornersOld(c);
+}
+function detectCornersOld(c){
   const w=160,h=Math.round(160*c.height/c.width);const t=document.createElement('canvas');t.width=w;t.height=h;const x=t.getContext('2d');x.drawImage(c,0,0,w,h);
   const d=x.getImageData(0,0,w,h).data;const g=new Float32Array(w*h);
   for(let i=0;i<w*h;i++)g[i]=.3*d[i*4]+.59*d[i*4+1]+.11*d[i*4+2];
@@ -285,8 +327,8 @@ function renderPages(){
   d.pages.forEach((p,i)=>{
     const el=document.createElement('div');el.className='pg';const im=document.createElement('img');im.src=URL.createObjectURL(p.out);el.append(im);
     const r=document.createElement('div');r.className='row';
-    const mk=(t,f)=>{const b=document.createElement('button');b.textContent=t;b.onclick=f;r.append(b)};
-    mk('✎',()=>editPage(i));mk('→',()=>mv(i,-1));mk('←',()=>mv(i,1));mk('🗑',()=>rm(i));
+    const mk=(t,f)=>{const b=document.createElement('button');b.innerHTML='<svg class="i" viewBox="0 0 24 24"><use href="#i-'+t+'"/></svg>';b.onclick=f;r.append(b)};
+    mk('edit',()=>editPage(i));mk('chevr',()=>mv(i,-1));mk('chevl',()=>mv(i,1));mk('trash',()=>rm(i));
     el.append(r);const n=document.createElement('small');n.className='muted';n.textContent='صفحة '+(i+1);el.append(n);box.append(el)});
 }
 async function mv(i,dx){const d=state.doc,j=i+dx;if(j<0||j>=d.pages.length)return;[d.pages[i],d.pages[j]]=[d.pages[j],d.pages[i]];d.updated=Date.now();await putDoc(d);renderPages()}
