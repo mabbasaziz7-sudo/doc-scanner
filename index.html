@@ -16,14 +16,101 @@
 <header id="bar"><button id="back" class="ic" hidden>›</button><h1 id="title">ماسح المستندات</h1><span id="barActions"></span></header>
 
 <main id="home" class="view">
-  <input id="search" type="search" placeholder="بحث في المستندات...">
-  <div id="docs"></div>
-  <p id="empty" class="muted" hidden>لا توجد مستندات بعد. اضغط على الكاميرا للبدء.</p>
-  <div class="fab">
-    <label class="fabBtn small">🖼️<input id="importInput" type="file" accept="image/*" multiple hidden></label>
-    <button id="newScan" class="fabBtn">📷</button>
+  <div class="searchWrap"><span class="sIco">🔍</span><input id="search" type="search" placeholder="ابحث في المستندات والنصوص"></div>
+  <div class="grid">
+    <button class="tool" data-tool="scan"><span class="tIco" style="background:#e0f2f1">📷</span>الماسح الضوئي</button>
+    <button class="tool" data-tool="pdftools"><span class="tIco" style="background:#fde8e8">📄</span>أدوات PDF</button>
+    <button class="tool" data-tool="importimg"><span class="tIco" style="background:#e3ecfd">🖼️</span>استيراد الصور</button>
+    <button class="tool" data-tool="importfile"><span class="tIco" style="background:#e8f0e4">📁</span>استيراد الملفات</button>
+    <button class="tool" data-tool="idcard"><span class="tIco" style="background:#e0f2f1">🪪</span>بطاقات الهوية</button>
+    <button class="tool" data-tool="ocr"><span class="tIco" style="background:#e0f2f1">🔠</span>استخراج النص</button>
+    <button class="tool" data-tool="idphoto"><span class="tIco" style="background:#e3ecfd">👤</span>صانع الصور ID</button>
+    <button class="tool" data-tool="all"><span class="tIco" style="background:#eef0f2">⊞</span>الكل</button>
   </div>
-  <button id="installBtn" class="install" hidden>⬇️ تثبيت التطبيق</button>
+  <div class="secHead"><h2>الأخيرة</h2><button id="seeAll" class="link">عرض الكل ‹</button></div>
+  <div id="recentDocs"></div>
+  <p id="empty" class="muted" hidden>لا توجد مستندات بعد. اضغط على زر الكاميرا بالأسفل للبدء.</p>
+</main>
+
+<main id="files" class="view" hidden>
+  <div class="searchWrap"><span class="sIco">🔍</span><input id="search2" type="search" placeholder="ابحث في المستندات والنصوص"></div>
+  <div id="docs"></div>
+  <p id="empty2" class="muted" hidden>لا توجد مستندات بعد.</p>
+</main>
+
+<main id="tools" class="view" hidden>
+  <div class="tlist">
+    <button class="trow" data-tool="scan"><span>📷</span>مسح مستند بالكاميرا</button>
+    <button class="trow" data-tool="pdftools"><span>📄</span>أدوات PDF (دمج، تقسيم، تحويل)</button>
+    <button class="trow" data-tool="importimg"><span>🖼️</span>استيراد صور من المعرض</button>
+    <button class="trow" data-tool="importfile"><span>📁</span>استيراد ملف PDF وتحويله لمستند</button>
+    <button class="trow" data-tool="idcard"><span>🪪</span>نسخة بطاقة هوية (وجهان في صفحة)</button>
+    <button class="trow" data-tool="ocr"><span>🔠</span>استخراج النص من صورة (OCR)</button>
+    <button class="trow" data-tool="idphoto"><span>👤</span>صانع صور الهوية بمقاسات رسمية</button>
+  </div>
+</main>
+
+<main id="pdfTools" class="view" hidden>
+  <div class="tlist">
+    <h3 class="ghead">إنشاء</h3>
+    <button class="trow" id="pdfFromImgs"><span>🖼️</span>صور ← PDF</button>
+    <button class="trow" id="pdfMerge"><span>🔗</span>دمج ملفات PDF</button>
+    <h3 class="ghead">تقسيم واستخراج</h3>
+    <button class="trow" id="pdfSplitPick"><span>✂️</span>استخراج صفحات من PDF</button>
+    <div id="splitBox" hidden>
+      <p class="muted" id="splitInfo"></p>
+      <div class="row"><label class="fl">من صفحة<input id="splitFrom" type="number" min="1" value="1"></label>
+      <label class="fl">إلى صفحة<input id="splitTo" type="number" min="1"></label></div>
+      <button id="splitGo" class="primary">استخراج</button>
+    </div>
+    <h3 class="ghead">تحويل</h3>
+    <button class="trow" id="pdfToDoc"><span>📑</span>PDF ← مستند ممسوح (صفحات كصور قابلة للتعديل)</button>
+  </div>
+  <input id="pdfImgsInput" type="file" accept="image/*" multiple hidden>
+  <input id="pdfMergeInput" type="file" accept="application/pdf,.pdf" multiple hidden>
+  <input id="pdfSplitInput" type="file" accept="application/pdf,.pdf" hidden>
+  <input id="pdfDocInput" type="file" accept="application/pdf,.pdf" hidden>
+</main>
+
+<main id="idcard" class="view" hidden>
+  <p class="muted">صوّر وجهي البطاقة وسنضعهما في صفحة A4 واحدة جاهزة للطباعة أو المشاركة.</p>
+  <div class="slots">
+    <button class="slot" id="idFront"><span>＋</span>الوجه الأمامي</button>
+    <button class="slot" id="idBack"><span>＋</span>الوجه الخلفي</button>
+  </div>
+  <div class="row"><button id="idFrontGal">أمامي من المعرض</button><button id="idBackGal">خلفي من المعرض</button></div>
+  <div class="row"><button id="idReset">إعادة</button><button id="idCreate" class="primary" disabled>إنشاء البطاقة</button></div>
+  <input id="idFrontInput" type="file" accept="image/*" hidden>
+  <input id="idBackInput" type="file" accept="image/*" hidden>
+</main>
+
+<main id="ocrTool" class="view" hidden>
+  <p class="muted">اختر صورة وسنستخرج النص منها (عربي وإنجليزي).</p>
+  <button id="ocrPick" class="primary">اختيار صورة</button>
+  <input id="ocrToolInput" type="file" accept="image/*" multiple hidden>
+  <div id="ocrToolBox" hidden>
+    <textarea id="ocrToolText" dir="auto"></textarea>
+    <div class="row"><button id="ocrToolCopy">نسخ</button><button id="ocrToolShare">مشاركة النص</button><button id="ocrToolSave">حفظ TXT</button></div>
+  </div>
+</main>
+
+<main id="idphoto" class="view" hidden>
+  <p class="muted">اختر المقاس ثم صورة من المعرض. ستقصّها بنفسك ونحفظها بالمقاس الرسمي (300 نقطة/بوصة).</p>
+  <div class="tlist">
+    <button class="trow sz" data-w="354" data-h="472"><span>👤</span>٣ × ٤ سم</button>
+    <button class="trow sz" data-w="413" data-h="531"><span>👤</span>٣٫٥ × ٤٫٥ سم</button>
+    <button class="trow sz" data-w="472" data-h="709"><span>👤</span>٤ × ٦ سم</button>
+    <button class="trow sz" data-w="600" data-h="600"><span>👤</span>٢ × ٢ بوصة</button>
+  </div>
+  <input id="idPhotoInput" type="file" accept="image/*" hidden>
+</main>
+
+<main id="me" class="view" hidden>
+  <div class="meCard"><span class="meIco">📄</span><b>ماسح المستندات</b><small class="muted">كل المزايا مجاناً، بدون علامة مائية وبدون حساب. كل بياناتك محفوظة على جهازك فقط.</small></div>
+  <div class="tlist">
+    <button class="trow" id="installBtn" hidden><span>⬇️</span>تثبيت التطبيق على الهاتف</button>
+    <div class="trow static"><span>💾</span><span id="storageInfo">جاري حساب المساحة...</span></div>
+  </div>
 </main>
 
 <main id="camera" class="view" hidden>
@@ -65,6 +152,16 @@
   <input id="docImport" type="file" accept="image/*" multiple hidden>
 </main>
 
+<nav id="nav">
+  <button class="nv on" data-nav="home"><span>🏠</span>الرئيسية</button>
+  <button class="nv" data-nav="files"><span>📁</span>الملفات</button>
+  <span class="nvSpace"><button id="navCam" aria-label="مسح">📷</button></span>
+  <button class="nv" data-nav="tools"><span>🧰</span>أدوات</button>
+  <button class="nv" data-nav="me"><span>👤</span>أنا</button>
+</nav>
+
+<input id="importInput" type="file" accept="image/*" multiple hidden>
+<input id="importFileInput" type="file" accept="image/*,application/pdf,.pdf" multiple hidden>
 <div id="toast" hidden></div>
 <div id="busy" hidden><div class="spin"></div><span id="busyText"></span></div>
 <script src="app.js"></script>
